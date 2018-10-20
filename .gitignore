@@ -1,0 +1,6 @@
+config.yml
+builder.xml
+**/*.class
+
+/target/
+/server/*
