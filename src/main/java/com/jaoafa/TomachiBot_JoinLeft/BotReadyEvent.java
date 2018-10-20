@@ -8,7 +8,6 @@ import javax.sound.sampled.AudioInputStream;
 import am.ik.voicetext4j.EmotionalSpeaker;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelJoinEvent;
 import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelLeaveEvent;
 import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelMoveEvent;
@@ -24,6 +23,7 @@ public class BotReadyEvent {
 
 
 	}
+	/*
 	@EventSubscriber
 	public void onMessageReceivedEvent(MessageReceivedEvent event) {
 		System.out.println("Msg: " + event.getAuthor().getName() + " " + event.getMessage().getContent());
@@ -35,7 +35,7 @@ public class BotReadyEvent {
 
 
 		speakinVC(audioP, event.getChannel(), event.getMessage().getContent());
-	}
+	}*/
 
 	@EventSubscriber
 	public void onUserVoiceChannelJoinEvent(UserVoiceChannelJoinEvent event){
