@@ -1,7 +1,16 @@
 package com.jaoafa.TomachiBot_JoinLeft;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Properties;
 
 import javax.sound.sampled.AudioInputStream;
 
@@ -12,9 +21,9 @@ import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelJoinE
 import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelLeaveEvent;
 import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelMoveEvent;
 import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.IVoiceChannel;
 import sx.blah.discord.util.audio.AudioPlayer;
-import sx.blah.discord.util.audio.events.TrackFinishEvent;
 
 public class BotReadyEvent {
 	@EventSubscriber
@@ -51,6 +60,34 @@ public class BotReadyEvent {
 		audioP.clear();
 
 		speakinVC(audioP, null, event.getUser().getName() + " joined!");
+
+		if(!event.getGuild().getStringID().equals("189377932429492224")){
+			return;
+		}
+		if(event.getUser().isBot()){
+			return;
+		}
+
+		List<IUser> noBots = new ArrayList<>();
+		for(IUser user : voice.getConnectedUsers()){
+			if(user.isBot()){
+				continue;
+			}
+			noBots.add(user);
+		}
+
+		long lastvcid = getLastVCID();
+		long lastvcuserid = getLastVCUserID();
+		if(lastvcid != voice.getLongID() && lastvcuserid != event.getUser().getLongID()){
+			System.out.println("VCAlert: lastvcid: " + lastvcid + " | lastvcuserid: " + lastvcuserid + " | " + noBots.size());
+			if(noBots.size() == 1){
+				IChannel general = event.getGuild().getChannelByID(189377932429492224L);
+				general.sendMessage(":telephone_receiver:" + voice.getName() + "で" + event.getUser().getName() + "#" + event.getUser().getDiscriminator() + "が通話をはじめました。");
+
+				setLastVCID(voice.getLongID());
+				setLastVCUserID(event.getUser().getLongID());
+			}
+		}
 	}
 
 	@EventSubscriber
@@ -67,6 +104,18 @@ public class BotReadyEvent {
 		audioP.clear();
 
 		speakinVC(audioP, null, event.getUser().getName() + " Leave");
+
+		List<IUser> noBots = new ArrayList<>();
+		for(IUser user : voice.getConnectedUsers()){
+			if(user.isBot()){
+				continue;
+			}
+			noBots.add(user);
+		}
+		System.out.println("VCLeft: " + noBots.size());
+		if(noBots.size() == 0){ // 自分含め
+			voice.leave();
+		}
 	}
 
 
@@ -84,6 +133,34 @@ public class BotReadyEvent {
 		audioP.clear();
 
 		speakinVC(audioP, null, event.getUser().getName() + " Moved from " + event.getOldChannel().getName() + "!");
+
+		if(!event.getGuild().getStringID().equals("189377932429492224")){
+			return;
+		}
+		if(event.getUser().isBot()){
+			return;
+		}
+
+		List<IUser> noBots = new ArrayList<>();
+		for(IUser user : voice.getConnectedUsers()){
+			if(user.isBot()){
+				continue;
+			}
+			noBots.add(user);
+		}
+
+		long lastvcid = getLastVCID();
+		long lastvcuserid = getLastVCUserID();
+		if(lastvcid != voice.getLongID() && lastvcuserid != event.getUser().getLongID()){
+			System.out.println("VCAlert: lastvcid: " + lastvcid + " | lastvcuserid: " + lastvcuserid + " | " + noBots.size());
+			if(noBots.size() == 1){
+				IChannel general = event.getGuild().getChannelByID(189377932429492224L);
+				general.sendMessage(":telephone_receiver:" + voice.getName() + "で" + event.getUser().getName() + "#" + event.getUser().getDiscriminator() + "が通話をはじめました。");
+
+				setLastVCID(voice.getLongID());
+				setLastVCUserID(event.getUser().getLongID());
+			}
+		}
 	}
 
 	void speakinVC(AudioPlayer audioP, IChannel channel, String message){
@@ -105,7 +182,111 @@ public class BotReadyEvent {
 			}
 		}
 	}
+	long getLastVCID(){
+		File f = new File("vcdata.properties");
+		Properties props;
+		try{
+			InputStream is = new FileInputStream(f);
 
+			// プロパティファイルを読み込む
+			props = new Properties();
+			props.load(is);
+		}catch(FileNotFoundException e){
+			return -1;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return -1;
+		}
+		if(!props.containsKey("vcid")){
+			return -1;
+		}
+
+		String vcidstr = props.getProperty("vcid");
+
+		try{
+			return Long.parseLong(vcidstr);
+		}catch(NumberFormatException e){
+			return -1;
+		}
+	}
+	void setLastVCID(long vcid){
+		File f = new File("vcdata.properties");
+		Properties props;
+
+		try {
+			InputStream is = new FileInputStream(f);
+
+			// プロパティファイルを読み込む
+			props = new Properties();
+			props.load(is);
+		} catch(FileNotFoundException e){
+			props = new Properties();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			return;
+		}
+
+		props.setProperty("vcid", Long.toString(vcid));
+
+		try {
+			props.store(new FileOutputStream("vcdata.properties"), "Comments");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	long getLastVCUserID(){
+		File f = new File("vcdata.properties");
+		Properties props;
+		try{
+			InputStream is = new FileInputStream(f);
+
+			// プロパティファイルを読み込む
+			props = new Properties();
+			props.load(is);
+		}catch(FileNotFoundException e){
+			return -1;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return -1;
+		}
+		if(!props.containsKey("vcuserid")){
+			return -1;
+		}
+
+		String vcuseridstr = props.getProperty("vcuserid");
+
+		try{
+			return Long.parseLong(vcuseridstr);
+		}catch(NumberFormatException e){
+			return -1;
+		}
+	}
+	void setLastVCUserID(long vcuserid){
+		File f = new File("vcdata.properties");
+		Properties props;
+
+		try {
+			InputStream is = new FileInputStream(f);
+
+			// プロパティファイルを読み込む
+			props = new Properties();
+			props.load(is);
+		} catch(FileNotFoundException e){
+			props = new Properties();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			return;
+		}
+
+		props.setProperty("vcuserid", Long.toString(vcuserid));
+
+		try {
+			props.store(new FileOutputStream("vcdata.properties"), "Comments");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+/*
 	@EventSubscriber
 	public void onFinish(TrackFinishEvent event){
 		if(event.getNewTrack().isPresent()){
@@ -118,4 +299,5 @@ public class BotReadyEvent {
 
 		botVoiceChannel.leave();
 	}
+	*/
 }
