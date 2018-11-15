@@ -81,7 +81,7 @@ public class BotReadyEvent {
 		if(lastvcid != voice.getLongID() && lastvcuserid != event.getUser().getLongID()){
 			System.out.println("VCAlert: lastvcid: " + lastvcid + " | lastvcuserid: " + lastvcuserid + " | " + noBots.size());
 			if(noBots.size() == 1){
-				IChannel general = event.getGuild().getChannelByID(189377932429492224L);
+				IChannel general = event.getGuild().getChannelByID(512242412635029514L);
 				general.sendMessage(":telephone_receiver:" + voice.getName() + "で" + event.getUser().getName() + "#" + event.getUser().getDiscriminator() + "が通話をはじめました。");
 
 				setLastVCID(voice.getLongID());
@@ -154,7 +154,7 @@ public class BotReadyEvent {
 		if(lastvcid != voice.getLongID() && lastvcuserid != event.getUser().getLongID()){
 			System.out.println("VCAlert: lastvcid: " + lastvcid + " | lastvcuserid: " + lastvcuserid + " | " + noBots.size());
 			if(noBots.size() == 1){
-				IChannel general = event.getGuild().getChannelByID(189377932429492224L);
+				IChannel general = event.getGuild().getChannelByID(512242412635029514L);
 				general.sendMessage(":telephone_receiver:" + voice.getName() + "で" + event.getUser().getName() + "#" + event.getUser().getDiscriminator() + "が通話をはじめました。");
 
 				setLastVCID(voice.getLongID());
