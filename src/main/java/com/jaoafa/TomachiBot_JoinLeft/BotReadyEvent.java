@@ -127,31 +127,36 @@ public class BotReadyEvent {
 		if(event.getUser().getLongID() == event.getClient().getOurUser().getLongID()){
 			return;
 		}
-		if(event.getVoiceChannel().getLongID() == event.getGuild().getAFKChannel().getLongID()){
-			return;
-		}
 		System.out.println("VoiceMove: " + event.getUser().getName() + " " + event.getOldChannel().getName() + " -> " + event.getNewChannel().getName());
 		IVoiceChannel voice = event.getVoiceChannel();
 
 		queue.clear();
-
-		VCSpeakClass clazz_leave = new VCSpeakClass(
-				event.getOldChannel(),
-				event.getUser().getName() + " moved to " + event.getNewChannel().getName()
-		);
-		Track current = clazz_leave.getAudioPlayer().getCurrentTrack();
-		if(current == null){
-			clazz_leave.run();
-		}else{
-			queue.add(clazz_leave);
+		if(event.getOldChannel().getLongID() != event.getGuild().getAFKChannel().getLongID()){
+			VCSpeakClass clazz_leave = new VCSpeakClass(
+					event.getOldChannel(),
+					event.getUser().getName() + " moved to " + event.getNewChannel().getName()
+			);
+			Track current = clazz_leave.getAudioPlayer().getCurrentTrack();
+			if(current == null){
+				clazz_leave.run();
+			}else{
+				queue.add(clazz_leave);
+			}
 		}
 
-		VCSpeakClass clazz_join = new VCSpeakClass(
-				event.getNewChannel(),
-				event.getUser().getName() + " moved from " + event.getOldChannel().getName()
-		);
+		if(event.getNewChannel().getLongID() != event.getGuild().getAFKChannel().getLongID()){
+			VCSpeakClass clazz_join = new VCSpeakClass(
+					event.getNewChannel(),
+					event.getUser().getName() + " moved from " + event.getOldChannel().getName()
+			);
 
-		queue.add(clazz_join);
+			Track current = clazz_join.getAudioPlayer().getCurrentTrack();
+			if(current == null){
+				clazz_join.run();
+			}else{
+				queue.add(clazz_join);
+			}
+		}
 
 		/* generalでのvc開始通知 */
 		if(!event.getGuild().getStringID().equals("189377932429492224")){
