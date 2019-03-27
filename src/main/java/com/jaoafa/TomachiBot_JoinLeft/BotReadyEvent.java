@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
 
@@ -18,13 +20,15 @@ import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelJoinE
 import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelLeaveEvent;
 import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelMoveEvent;
 import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.IVoiceChannel;
 import sx.blah.discord.util.audio.AudioPlayer.Track;
 import sx.blah.discord.util.audio.events.TrackFinishEvent;
 
 public class BotReadyEvent {
-	Queue<VCSpeakClass> queue = new ArrayDeque<>();
+	Map<Long, Queue<VCSpeakClass>> vcspeaks = new HashMap<>();
+	//Queue<VCSpeakClass> queue = new ArrayDeque<>();
 
 	@EventSubscriber
 	public void onReadyEvent(ReadyEvent event) {
@@ -39,8 +43,18 @@ public class BotReadyEvent {
 		if(event.getVoiceChannel().getLongID() == event.getGuild().getAFKChannel().getLongID()){
 			return;
 		}
+
 		System.out.println("VoiceJoin: " + event.getUser().getName() + " " + event.getVoiceChannel().getName());
 		IVoiceChannel voice = event.getVoiceChannel();
+
+		IGuild guild = event.getGuild();
+
+		Queue<VCSpeakClass> queue;
+		if(vcspeaks.containsKey(guild.getLongID())){
+			queue = vcspeaks.get(guild.getLongID());
+		}else{
+			queue = new ArrayDeque<>();
+		}
 
 		queue.clear();
 
@@ -54,6 +68,8 @@ public class BotReadyEvent {
 		}else{
 			queue.add(clazz);
 		}
+
+		vcspeaks.put(guild.getLongID(), queue);
 
 		/* generalでのvc開始通知 */
 		if(!event.getGuild().getStringID().equals("189377932429492224")){
@@ -96,6 +112,15 @@ public class BotReadyEvent {
 		System.out.println("VoiceJoin: " + event.getUser().getName() + " " + event.getVoiceChannel().getName());
 		IVoiceChannel voice = event.getVoiceChannel();
 
+		IGuild guild = event.getGuild();
+
+		Queue<VCSpeakClass> queue;
+		if(vcspeaks.containsKey(guild.getLongID())){
+			queue = vcspeaks.get(guild.getLongID());
+		}else{
+			queue = new ArrayDeque<>();
+		}
+
 		queue.clear();
 
 		VCSpeakClass clazz = new VCSpeakClass(
@@ -108,6 +133,8 @@ public class BotReadyEvent {
 		}else{
 			queue.add(clazz);
 		}
+
+		vcspeaks.put(guild.getLongID(), queue);
 
 		List<IUser> noBots = new ArrayList<>();
 		for(IUser user : voice.getConnectedUsers()){
@@ -130,8 +157,32 @@ public class BotReadyEvent {
 		System.out.println("VoiceMove: " + event.getUser().getName() + " " + event.getOldChannel().getName() + " -> " + event.getNewChannel().getName());
 		IVoiceChannel voice = event.getVoiceChannel();
 
+		IGuild guild = event.getGuild();
+
+		Queue<VCSpeakClass> queue;
+		if(vcspeaks.containsKey(guild.getLongID())){
+			queue = vcspeaks.get(guild.getLongID());
+		}else{
+			queue = new ArrayDeque<>();
+		}
+
 		queue.clear();
-		if(event.getOldChannel().getLongID() != event.getGuild().getAFKChannel().getLongID()){
+		if(event.getGuild().getAFKChannel() != null){
+			// afkあり
+			if(event.getOldChannel().getLongID() != event.getGuild().getAFKChannel().getLongID()){
+				VCSpeakClass clazz_leave = new VCSpeakClass(
+						event.getOldChannel(),
+						event.getUser().getName() + " moved to " + event.getNewChannel().getName()
+				);
+				Track current = clazz_leave.getAudioPlayer().getCurrentTrack();
+				if(current == null){
+					clazz_leave.run();
+				}else{
+					queue.add(clazz_leave);
+				}
+			}
+		}else{
+			// afkなし
 			VCSpeakClass clazz_leave = new VCSpeakClass(
 					event.getOldChannel(),
 					event.getUser().getName() + " moved to " + event.getNewChannel().getName()
@@ -144,19 +195,7 @@ public class BotReadyEvent {
 			}
 		}
 
-		if(event.getNewChannel().getLongID() != event.getGuild().getAFKChannel().getLongID()){
-			VCSpeakClass clazz_join = new VCSpeakClass(
-					event.getNewChannel(),
-					event.getUser().getName() + " moved from " + event.getOldChannel().getName()
-			);
-
-			Track current = clazz_join.getAudioPlayer().getCurrentTrack();
-			if(current == null){
-				clazz_join.run();
-			}else{
-				queue.add(clazz_join);
-			}
-		}
+		vcspeaks.put(guild.getLongID(), queue);
 
 		/* generalでのvc開始通知 */
 		if(!event.getGuild().getStringID().equals("189377932429492224")){
@@ -190,6 +229,14 @@ public class BotReadyEvent {
 
 	@EventSubscriber
 	public void onFinish(TrackFinishEvent event){
+		IGuild guild = event.getPlayer().getGuild();
+
+		Queue<VCSpeakClass> queue;
+		if(vcspeaks.containsKey(guild.getLongID())){
+			queue = vcspeaks.get(guild.getLongID());
+		}else{
+			queue = new ArrayDeque<>();
+		}
 		VCSpeakClass clazz = queue.poll();
         if (clazz == null){
         	// 次がない
@@ -203,6 +250,8 @@ public class BotReadyEvent {
         	// 次がある
 			clazz.run();
         }
+
+		vcspeaks.put(guild.getLongID(), queue);
 	}
 	long getLastVCID(){
 		File f = new File("vcdata.properties");
