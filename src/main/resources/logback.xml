@@ -1,0 +1,4 @@
+<configuration>
+    <logger name="org.eclipse.*" level="OFF"/>
+    <logger name="sx.blah.*" level="OFF"/>
+</configuration>

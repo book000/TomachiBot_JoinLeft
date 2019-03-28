@@ -4,5 +4,6 @@
 [![Support jdk](https://img.shields.io/badge/Support%20jdk-oraclejdk8-red.svg)](https://img.shields.io)
 [![Author](https://img.shields.io/badge/Author%20MinecraftID-mine__book000-orange.svg)](https://img.shields.io)
 [![License](https://img.shields.io/badge/license-None-yellow.svg)](https://img.shields.io)
+[![Twitter Follow](https://img.shields.io/twitter/follow/book000.svg?style=social)](https://twitter.com/book000)
 
 VCに誰かが入ったり、出たり、移動したときに音声でそれらを知らせます。
