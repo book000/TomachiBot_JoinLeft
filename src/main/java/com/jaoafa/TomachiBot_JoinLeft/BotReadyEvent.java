@@ -6,6 +6,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
+
+import org.json.JSONObject;
 
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
@@ -72,7 +78,8 @@ public class BotReadyEvent {
 		vcspeaks.put(guild.getLongID(), queue);
 
 		/* generalでのvc開始通知 */
-		if(!event.getGuild().getStringID().equals("189377932429492224")){
+		long channelID = getAlertChannel(guild.getStringID());
+		if(channelID == -1){
 			return;
 		}
 		if(event.getUser().isBot()){
@@ -87,16 +94,16 @@ public class BotReadyEvent {
 			noBots.add(user);
 		}
 
-		long lastvcid = getLastVCID();
-		long lastvcuserid = getLastVCUserID();
+		long lastvcid = getLastVCID(voice.getGuild().getStringID());
+		long lastvcuserid = getLastVCUserID(voice.getGuild().getStringID());
 		if(lastvcid != voice.getLongID() && lastvcuserid != event.getUser().getLongID()){
 			System.out.println("VCAlert: lastvcid: " + lastvcid + " | lastvcuserid: " + lastvcuserid + " | " + noBots.size());
 			if(noBots.size() == 1){
-				IChannel general = event.getGuild().getChannelByID(512242412635029514L);
+				IChannel general = event.getGuild().getChannelByID(channelID);
 				general.sendMessage(":telephone_receiver:" + voice.getName() + "で" + event.getUser().getName() + "#" + event.getUser().getDiscriminator() + "が通話をはじめました。");
 
-				setLastVCID(voice.getLongID());
-				setLastVCUserID(event.getUser().getLongID());
+				setLastVCID(voice.getGuild().getStringID(), voice.getLongID());
+				setLastVCUserID(voice.getGuild().getStringID(), event.getUser().getLongID());
 			}
 		}
 	}
@@ -198,7 +205,8 @@ public class BotReadyEvent {
 		vcspeaks.put(guild.getLongID(), queue);
 
 		/* generalでのvc開始通知 */
-		if(!event.getGuild().getStringID().equals("189377932429492224")){
+		long channelID = getAlertChannel(guild.getStringID());
+		if(channelID == -1){
 			return;
 		}
 		if(event.getUser().isBot()){
@@ -213,16 +221,16 @@ public class BotReadyEvent {
 			noBots.add(user);
 		}
 
-		long lastvcid = getLastVCID();
-		long lastvcuserid = getLastVCUserID();
+		long lastvcid = getLastVCID(voice.getGuild().getStringID());
+		long lastvcuserid = getLastVCUserID(voice.getGuild().getStringID());
 		if(lastvcid != voice.getLongID() && lastvcuserid != event.getUser().getLongID()){
 			System.out.println("VCAlert: lastvcid: " + lastvcid + " | lastvcuserid: " + lastvcuserid + " | " + noBots.size());
 			if(noBots.size() == 1){
-				IChannel general = event.getGuild().getChannelByID(512242412635029514L);
+				IChannel general = event.getGuild().getChannelByID(channelID);
 				general.sendMessage(":telephone_receiver:" + voice.getName() + "で" + event.getUser().getName() + "#" + event.getUser().getDiscriminator() + "が通話をはじめました。");
 
-				setLastVCID(voice.getLongID());
-				setLastVCUserID(event.getUser().getLongID());
+				setLastVCID(voice.getGuild().getStringID(), voice.getLongID());
+				setLastVCUserID(voice.getGuild().getStringID(), event.getUser().getLongID());
 			}
 		}
 	}
@@ -253,7 +261,7 @@ public class BotReadyEvent {
 
 		vcspeaks.put(guild.getLongID(), queue);
 	}
-	long getLastVCID(){
+	long getLastVCID(String guildID){
 		File f = new File("vcdata.properties");
 		Properties props;
 		try{
@@ -268,11 +276,11 @@ public class BotReadyEvent {
 			e.printStackTrace();
 			return -1;
 		}
-		if(!props.containsKey("vcid")){
+		if(!props.containsKey(guildID + "_vcid")){
 			return -1;
 		}
 
-		String vcidstr = props.getProperty("vcid");
+		String vcidstr = props.getProperty(guildID + "_vcid");
 
 		try{
 			return Long.parseLong(vcidstr);
@@ -280,7 +288,7 @@ public class BotReadyEvent {
 			return -1;
 		}
 	}
-	void setLastVCID(long vcid){
+	void setLastVCID(String guildID, long vcid){
 		File f = new File("vcdata.properties");
 		Properties props;
 
@@ -297,7 +305,7 @@ public class BotReadyEvent {
 			return;
 		}
 
-		props.setProperty("vcid", Long.toString(vcid));
+		props.setProperty(guildID + "_vcid", Long.toString(vcid));
 
 		try {
 			props.store(new FileOutputStream("vcdata.properties"), "Comments");
@@ -305,7 +313,7 @@ public class BotReadyEvent {
 			e.printStackTrace();
 		}
 	}
-	long getLastVCUserID(){
+	long getLastVCUserID(String guildID){
 		File f = new File("vcdata.properties");
 		Properties props;
 		try{
@@ -320,11 +328,11 @@ public class BotReadyEvent {
 			e.printStackTrace();
 			return -1;
 		}
-		if(!props.containsKey("vcuserid")){
+		if(!props.containsKey(guildID + "_vcuserid")){
 			return -1;
 		}
 
-		String vcuseridstr = props.getProperty("vcuserid");
+		String vcuseridstr = props.getProperty(guildID + ".vcuserid");
 
 		try{
 			return Long.parseLong(vcuseridstr);
@@ -332,7 +340,7 @@ public class BotReadyEvent {
 			return -1;
 		}
 	}
-	void setLastVCUserID(long vcuserid){
+	void setLastVCUserID(String guildID, long vcuserid){
 		File f = new File("vcdata.properties");
 		Properties props;
 
@@ -349,12 +357,28 @@ public class BotReadyEvent {
 			return;
 		}
 
-		props.setProperty("vcuserid", Long.toString(vcuserid));
+		props.setProperty(guildID + "_vcuserid", Long.toString(vcuserid));
 
 		try {
 			props.store(new FileOutputStream("vcdata.properties"), "Comments");
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+	long getAlertChannel(String guildID){
+		Path path = Paths.get("alertchannel.json");
+		try {
+		    List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+		    String data = String.join("\n", lines);
+		    JSONObject obj = new JSONObject(data);
+		    if(obj.has(guildID)){
+		    	return obj.getLong(guildID);
+		    }else{
+		    	return -1;
+		    }
+		} catch (IOException e) {
+		    e.printStackTrace();
+		    return -1;
 		}
 	}
 }
