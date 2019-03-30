@@ -332,7 +332,7 @@ public class BotReadyEvent {
 			return -1;
 		}
 
-		String vcuseridstr = props.getProperty(guildID + ".vcuserid");
+		String vcuseridstr = props.getProperty(guildID + "_vcuserid");
 
 		try{
 			return Long.parseLong(vcuseridstr);
